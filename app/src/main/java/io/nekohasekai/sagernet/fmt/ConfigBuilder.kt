@@ -526,9 +526,20 @@ fun buildConfig(
                     user_id = uidList
                 }
                 var domainList: List<String>? = null
+                var domainList_is_fakedns: Boolean = false
+
                 if (rule.domains.isNotBlank()) {
-                    domainList = rule.domains.listByLineOrComma()
-                    makeSingBoxRule(domainList, false)
+                    //修改domain输入框解析规则，若以fakedns:为首行则视为fakedns规则，不参与路由规则
+                    if (rule.domains.startsWith("fakedns:\n")) {
+                        domainList = rule.domains.removePrefix("fakedns:\n").listByLineOrComma()
+                        rule_set = mutableListOf<String>()
+                        domainList.forEach { if (it.startsWith("geosite:"))  rule_set.plusAssign(it) }
+                        domainList_is_fakedns = true
+                    }
+                    else {
+                        domainList = rule.domains.listByLineOrComma()
+                        makeSingBoxRule(domainList, false)
+                    }
                 }
                 if (rule.ip.isNotBlank()) {
                     makeSingBoxRule(rule.ip.listByLineOrComma(), true)
@@ -581,11 +592,13 @@ fun buildConfig(
                     }
 
                     0L -> {
-                        if (useFakeDns) userDNSRuleList += makeDnsRuleObj().apply {
+                        //当开启fakedns，且路由规则的domain第一行以fakedns开头，出站选择代理，则把domain规则单独使用fakedns解析
+                        if (useFakeDns && domainList_is_fakedns) userDNSRuleList += makeDnsRuleObj().apply {
                             server = "dns-fake"
                             inbound = listOf("tun-in")
+                            disable_cache = true
                         }
-                        userDNSRuleList += makeDnsRuleObj().apply {
+                        else userDNSRuleList += makeDnsRuleObj().apply {
                             server = "dns-remote"
                         }
                     }
@@ -749,11 +762,6 @@ fun buildConfig(
                     address = "fakeip"
                     tag = "dns-fake"
                     strategy = "ipv4_only"
-                })
-                dns.rules.add(DNSRule_DefaultOptions().apply {
-                    inbound = listOf("tun-in")
-                    server = "dns-fake"
-                    disable_cache = true
                 })
             }
             // force bypass (always top DNS rule)
