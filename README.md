@@ -1,10 +1,32 @@
 # 分支介绍
 
-nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要解锁服务来说就比较蛋疼了。
-
 [GitHub Releases 下载](https://github.com/zizzdog/NekoBoxForAndroid/releases)
 
+俗话说玩dns容易被dns玩死，路由规则domain支持如下配置：
++ `dns:direct` 指定规则内域名使用直连DNS解析
++ `dns:remote` 指定规则内域名使用远程DNS解析
++ `dns:block` 指定规则内域名禁止解析
++ `dns:fakedns` 指定规则内域名使用FakeDNS解析
+
+设置如上配置后dns规则就不会遵循outbound设置的规则：
+
+```
+dns:direct
+domain:google.com
+
+outbound选择代理
+```
+那么最终访问google时候，会使用直连DNS解析，而不是远程dns
+
+若开头添加!号如：`!dns:remote`，表示该规则仅作为dns规则，不生成相关的路由规则
+
+已知问题：规则的geosite不能重复，即使一条是普通规则，另一条是仅作用于dns的规则
+
+# 解决dns解锁的思路
 ## 原本的流程
+
+nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要解锁服务来说就比较蛋疼了。
+
 比如说香港节点访问`chatgpt.com`，gpt不开放香港地区所以一般机场都会提供解锁服务
 1. 浏览器发起dns请求解析`chatgpt.com`
 2. 软件检测到国外域名请求发给`1.1.1.1`的dns
@@ -28,10 +50,10 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
 
 此分支修改了fakedns的选项机制。原本设置中的`启用FakenDNS`开启后会接管所有没有匹配到路由规则的域名，返回虚拟ip地址。个人修改后，开启此选项只会生成一个fakedns的上游dns服务器而不劫持所有dns请求。
 ## 配置示例
-首先开启设置中的`启用FakenDNS`，然后在路由中添加规则，domain以fakedns:为首行，之后填写需要使用fakedns的域名或规则集，把outbound设置为代理，这样就会生成对应的dns规则发送给fakedns服务。
+首先开启设置中的`启用FakenDNS`，然后在路由中添加规则，domain以dns:fakedns为首行，之后填写需要使用fakedns的域名或规则集，这样就会生成对应的dns规则发送给fakedns服务。
 ![设置示例](%E8%AE%BE%E7%BD%AE%E7%A4%BA%E4%BE%8B.png)
 
-## 生成配置
+## 生成配置如下
 ```json
 {
   "dns": {
@@ -44,11 +66,17 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
     "rules": [
       {
         "disable_cache": true,
-        "inbound": [
-          "tun-in"
+        "domain": [
+          "www.google.com"
+        ],
+        "domain_suffix": [
+          "netflix.com"
         ],
         "rule_set": [
           "geosite:openai"
+        ],
+        "inbound": [
+          "tun-in"
         ],
         "server": "dns-fake"
       }
@@ -66,93 +94,3 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
   ...
 }
 ```
-
-## 效果：
-![效果](%E6%95%88%E6%9E%9C.png)
-
-# NekoBox for Android
-
-[![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=21)
-[![Releases](https://img.shields.io/github/v/release/MatsuriDayo/NekoBoxForAndroid)](https://github.com/MatsuriDayo/NekoBoxForAndroid/releases)
-[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-orange.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-sing-box / universal proxy toolchain for Android.
-
-一款使用 sing-box 的 Android 通用代理软件.
-
-## 下载 / Downloads
-
-[![GitHub All Releases](https://img.shields.io/github/downloads/Matsuridayo/NekoBoxForAndroid/total?label=downloads-total&logo=github&style=flat-square)](https://github.com/Matsuridayo/NekoBoxForAndroid/releases)
-
-[GitHub Releases 下载](https://github.com/Matsuridayo/NekoBoxForAndroid/releases)
-
-**Google Play 版本自 2024 年 5 月起已被第三方控制，为非开源版本，请不要下载。**
-
-**The Google Play version has been controlled by a third party since May 2024 and is a non-open source version. Please do not download it.**
-
-## 更新日志 & Telegram 发布频道 / Changelog & Telegram Channel
-
-https://t.me/Matsuridayo
-
-## 项目主页 & 文档 / Homepage & Documents
-
-https://matsuridayo.github.io
-
-## 支持的代理协议 / Supported Proxy Protocols
-
-* SOCKS (4/4a/5)
-* HTTP(S)
-* SSH
-* Shadowsocks
-* VMess
-* VLESS
-* WireGuard
-* Trojan
-* Trojan-Go (trojan-go-plugin)
-* NaïveProxy (naive-plugin)
-* Hysteria (hysteria-plugin)
-* Mieru (mieru-plugin)
-* TUIC
-
-请到[这里](https://matsuridayo.github.io/m-plugin/)下载插件以获得完整的代理支持.
-
-Please visit [here](https://matsuridayo.github.io/m-plugin/) to download plugins for full proxy supports.
-
-## 支持的订阅格式 / Supported Subscription Format
-
-* 原始格式: 一些广泛使用的格式 (如 Shadowsocks, Clash 和 v2rayN)
-* Raw: some widely used formats (like Shadowsocks, Clash and v2rayN)
-
-## 捐助 / Donate
-
-<details>
-
-如果这个项目对您有帮助, 可以通过捐赠的方式帮助我们维持这个项目.
-
-捐赠满等额 50 USD 可以在「[捐赠榜](https://mtrdnt.pages.dev/donation_list)」显示头像, 如果您未被添加到这里, 欢迎联系我们补充.
-
-Donations of 50 USD or more can display your avatar on the [Donation List](https://mtrdnt.pages.dev/donation_list). If you are not added here, please contact us to add it.
-
-USDT TRC20
-
-`TRhnA7SXE5Sap5gSG3ijxRmdYFiD4KRhPs`
-
-XMR
-
-`49bwESYQjoRL3xmvTcjZKHEKaiGywjLYVQJMUv79bXonGiyDCs8AzE3KiGW2ytTybBCpWJUvov8SjZZEGg66a4e59GXa6k5`
-
-</details>
-
-## Credits
-
-Core:
-- [SagerNet/sing-box](https://github.com/SagerNet/sing-box)
-- [Matsuridayo/sing-box-extra](https://github.com/MatsuriDayo/sing-box-extra)
-
-Android GUI:
-- [shadowsocks/shadowsocks-android](https://github.com/shadowsocks/shadowsocks-android)
-- [SagerNet/SagerNet](https://github.com/SagerNet/SagerNet)
-- [Matsuridayo/Matsuri](https://github.com/MatsuriDayo/Matsuri)
-
-Web Dashboard:
-- [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)

@@ -534,7 +534,7 @@ fun buildConfig(
                         "dns:direct" -> dnsRule = -1L
                         "dns:remote" -> dnsRule = 0L
                         "dns:block" -> dnsRule = -2L
-                        "dns:fakedns" -> dnsRule = 999L
+                        "dns:fakedns" -> dnsRule = 9L
                         else -> dnsRule = rule.outbound //不匹配则跟随出站规则
                     }
                     // 若启用自定义dns规则则删掉domain框输入内容的首行
@@ -565,7 +565,7 @@ fun buildConfig(
                             server = "dns-block"
                             disable_cache = true
                         }
-                    999L -> { //若使用fakedns
+                    9L -> { //若使用fakedns
                         if (useFakeDns) userDNSRuleList += makeDnsRuleObj().apply {
                             server = "dns-fake"
                             inbound = listOf("tun-in")
