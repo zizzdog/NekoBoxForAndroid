@@ -526,21 +526,54 @@ fun buildConfig(
                     user_id = uidList
                 }
                 var domainList: List<String>? = null
-                var domainList_is_fakedns: Boolean = false
-
+                //修改domain输入框解析规则
+                var dnsRule: Long? = null
                 if (rule.domains.isNotBlank()) {
-                    //修改domain输入框解析规则，若以fakedns:为首行则视为fakedns规则，不参与路由规则
-                    if (rule.domains.startsWith("fakedns:\n")) {
-                        domainList = rule.domains.removePrefix("fakedns:\n").listByLineOrComma()
-                        rule_set = mutableListOf<String>()
-                        domainList.forEach { if (it.startsWith("geosite:"))  rule_set.plusAssign(it) }
-                        domainList_is_fakedns = true
+                    // 判断是否启用自定义dns规则
+                    when (rule.domains.substringAfter("!").substringBefore("\n")){
+                        "dns:direct" -> dnsRule = -1L
+                        "dns:remote" -> dnsRule = 0L
+                        "dns:block" -> dnsRule = -2L
+                        "dns:fakedns" -> dnsRule = 999L
+                        else -> dnsRule = rule.outbound //不匹配则跟随出站规则
                     }
-                    else {
-                        domainList = rule.domains.listByLineOrComma()
-                        makeSingBoxRule(domainList, false)
+                    // 若启用自定义dns规则则删掉domain框输入内容的首行
+                    if (rule.domains.startsWith("!dns:") || rule.domains.startsWith("dns:")) 
+                         domainList = rule.domains.substringAfter("\n").listByLineOrComma() 
+                    else domainList = rule.domains.listByLineOrComma() 
+                    // 若以!dns开头视为仅配置dns规则而不配置路由规则
+                    if (rule.domains.startsWith("!dns:")) {
+                        rule_set = mutableListOf<String>()
+                        // 涉及到处理geosite逻辑在配置路由规则函数里，所以在这补上
+                        domainList.forEach { if (it.startsWith("geosite:"))  rule_set.plusAssign(it) }
+                    }
+                    else makeSingBoxRule(domainList, false)
+                }
+                
+                fun makeDnsRuleObj(): DNSRule_DefaultOptions {
+                    return DNSRule_DefaultOptions().apply {
+                        if (uidList.isNotEmpty()) user_id = uidList
+                        domainList?.let { makeSingBoxRule(it) }
                     }
                 }
+
+                // 构建dns规则
+                when (dnsRule) {
+                    -1L -> userDNSRuleList += makeDnsRuleObj().apply { server = "dns-direct" }
+                    0L -> userDNSRuleList += makeDnsRuleObj().apply { server = "dns-remote" }
+                    -2L -> userDNSRuleList += makeDnsRuleObj().apply {
+                            server = "dns-block"
+                            disable_cache = true
+                        }
+                    999L -> { //若使用fakedns
+                        if (useFakeDns) userDNSRuleList += makeDnsRuleObj().apply {
+                            server = "dns-fake"
+                            inbound = listOf("tun-in")
+                            disable_cache = true
+                        }
+                    }
+                }
+
                 if (rule.ip.isNotBlank()) {
                     makeSingBoxRule(rule.ip.listByLineOrComma(), true)
                 }
@@ -577,38 +610,6 @@ fun buildConfig(
                 }
                 if (rule.protocol.isNotBlank()) {
                     protocol = rule.protocol.listByLineOrComma()
-                }
-
-                fun makeDnsRuleObj(): DNSRule_DefaultOptions {
-                    return DNSRule_DefaultOptions().apply {
-                        if (uidList.isNotEmpty()) user_id = uidList
-                        domainList?.let { makeSingBoxRule(it) }
-                    }
-                }
-
-                when (rule.outbound) {
-                    -1L -> {
-                        userDNSRuleList += makeDnsRuleObj().apply { server = "dns-direct" }
-                    }
-
-                    0L -> {
-                        //当开启fakedns，且路由规则的domain第一行以fakedns开头，出站选择代理，则把domain规则单独使用fakedns解析
-                        if (useFakeDns && domainList_is_fakedns) userDNSRuleList += makeDnsRuleObj().apply {
-                            server = "dns-fake"
-                            inbound = listOf("tun-in")
-                            disable_cache = true
-                        }
-                        else userDNSRuleList += makeDnsRuleObj().apply {
-                            server = "dns-remote"
-                        }
-                    }
-
-                    -2L -> {
-                        userDNSRuleList += makeDnsRuleObj().apply {
-                            server = "dns-block"
-                            disable_cache = true
-                        }
-                    }
                 }
 
                 outbound = when (val outId = rule.outbound) {
