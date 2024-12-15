@@ -422,7 +422,10 @@ fun buildConfig(
 
                     // custom JSON merge
                     if (bean.customOutboundJson.isNotBlank()) {
-                        Util.mergeJSON(bean.customOutboundJson, currentOutbound)
+                        Util.mergeJSON(
+                            bean.customOutboundJson,
+                            currentOutbound as MutableMap<String, Any?>
+                        )
                     }
                 }
 
@@ -779,6 +782,11 @@ fun buildConfig(
                     strategy = "ipv4_only"
                 })
             }
+            // avoid loopback
+            dns.rules.add(0, DNSRule_DefaultOptions().apply {
+                outbound = mutableListOf("any")
+                server = "dns-direct"
+            })
             // force bypass (always top DNS rule)
             if (domainListDNSDirectForce.isNotEmpty()) {
                 dns.rules.add(0, DNSRule_DefaultOptions().apply {
