@@ -66,10 +66,8 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
     "rules": [
       {
         "disable_cache": true,
-        "domain": [
-          "www.google.com"
-        ],
         "domain_suffix": [
+          "www.google.com",
           "netflix.com"
         ],
         "rule_set": [
