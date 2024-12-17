@@ -542,14 +542,17 @@ fun buildConfig(
                     var domainStr = rule.domains.removePrefix("!")
                     // 判断是那种dns规则
                     when (domainStr.substringBefore("\n")){
-                        "dns:direct" -> dnsRule = -1L
-                        "dns:remote" -> dnsRule = 0L
-                        "dns:block" -> dnsRule = -2L
-                        "dns:fakedns" -> dnsRule = 9L
+                        "dns:direct"    -> dnsRule = -1L
+                        "dns:remote"    -> dnsRule = 0L
+                        "dns:block"     -> dnsRule = -2L
+                        "dns:fakedns"   -> dnsRule = 9L
+                        else -> { if (domainStr.startsWith("dns:")) 
+                            Toast.makeText(SagerNet.application, rule.displayName() + "：自定义DNS规则填写错误!",Toast.LENGTH_LONG).show()
+                        }
                     }
                     // 若启用自定义dns规则则删掉domain框输入内容的首行
                     if (dnsRule != null) 
-                         domainList = domainStr.substringAfter("\n").listByLineOrComma() 
+                         domainList = domainStr.substringAfter("\n","regexp:.*").listByLineOrComma() 
                     else domainList = domainStr.listByLineOrComma() 
                 }
 

@@ -2,7 +2,9 @@
 
 [GitHub Releases 下载](https://github.com/zizzdog/NekoBoxForAndroid/releases)
 
-俗话说玩dns容易被dns玩死，路由规则domain支持如下配置：
+俗话说玩dns容易被dns玩死，如果不懂请不要胡乱设置规则。
+
+本分支支持在路由规则中domain输入框填入如下配置：
 + `dns:direct` 指定规则内域名使用直连DNS解析
 + `dns:remote` 指定规则内域名使用远程DNS解析
 + `dns:block` 指定规则内域名禁止解析
@@ -18,7 +20,7 @@ outbound选择代理
 ```
 那么最终访问google时候，会使用直连DNS解析，而不是远程dns
 
-若开头添加!号如：`!dns:remote`，表示该规则仅作为dns规则，不生成相关的路由规则
+若开头添加!号如：`!dns:remote`，表示该规则仅作为dns规则，不生成相关的路由规则。其效果就是没有其他路由规则情况会走当前代理节点。如果没有叹号开头，则会遵循该规则选择的outbound选项，可选其他节点进行分流。
 
 已知问题：规则的geosite不能重复，即使一条是普通规则，另一条是仅作用于dns的规则
 
@@ -67,8 +69,7 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
       {
         "disable_cache": true,
         "domain_suffix": [
-          "www.google.com",
-          "netflix.com"
+          "chatgpt.com",
         ],
         "rule_set": [
           "geosite:openai"
@@ -100,7 +101,6 @@ nekobox通常的配置是发起真实dns请求获取真实ip，但对于需要�
 对应用的所有请求都应用fakedns服务，可以使用如下配置然后选择应用
 ```
 dns:fakedns
-regexp:.*
 ```
 ![对应用解锁](%E5%BA%94%E7%94%A8%E8%A7%A3%E9%94%81%E7%A4%BA%E4%BE%8B.png)
 
@@ -108,7 +108,6 @@ regexp:.*
 使用如下配置且不选择任何应用
 ```
 !dns:fakedns
-regexp:.*
 ```
 
 ## 其他用法请自行探索
