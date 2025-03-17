@@ -25,7 +25,7 @@ import io.nekohasekai.sagernet.databinding.LayoutAboutBinding
 import io.nekohasekai.sagernet.ktx.*
 import io.nekohasekai.sagernet.plugin.PluginManager.loadString
 import io.nekohasekai.sagernet.utils.PackageCache
-import io.nekohasekai.sagernet.widget.ListHolderListener
+import io.nekohasekai.sagernet.widget.ListListener
 import libcore.Libcore
 import moe.matsuri.nb4a.plugin.Plugins
 
@@ -36,7 +36,7 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
 
         val binding = LayoutAboutBinding.bind(view)
 
-        ViewCompat.setOnApplyWindowInsetsListener(view, ListHolderListener)
+        ViewCompat.setOnApplyWindowInsetsListener(view, ListListener)
         toolbar.setTitle(R.string.menu_about)
 
         parentFragmentManager.beginTransaction()
@@ -107,7 +107,7 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                         PackageCache.awaitLoadSync()
                         for ((_, pkg) in PackageCache.installedPluginPackages) {
                             try {
-                                val pluginId = pkg.providers[0].loadString(Plugins.METADATA_KEY_ID)
+                                val pluginId = pkg.providers?.get(0)?.loadString(Plugins.METADATA_KEY_ID)
                                 if (pluginId.isNullOrBlank() || pluginId.startsWith(Plugins.AUTHORITIES_PREFIX_NEKO_PLUGIN)) continue
                                 addItem(MaterialAboutActionItem.Builder()
                                     .icon(R.drawable.ic_baseline_nfc_24)

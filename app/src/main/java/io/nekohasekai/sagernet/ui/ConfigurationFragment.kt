@@ -57,6 +57,7 @@ import kotlinx.coroutines.sync.withLock
 import moe.matsuri.nb4a.Protocols
 import moe.matsuri.nb4a.Protocols.getProtocolColor
 import moe.matsuri.nb4a.plugin.NekoPluginManager
+import moe.matsuri.nb4a.proxy.anytls.AnyTLSSettingsActivity
 import moe.matsuri.nb4a.proxy.config.ConfigSettingActivity
 import moe.matsuri.nb4a.proxy.neko.NekoJSInterface
 import moe.matsuri.nb4a.proxy.neko.NekoSettingActivity
@@ -148,7 +149,7 @@ class ConfigurationFragment @JvmOverloads constructor(
             searchView.setOnQueryTextListener(this)
             searchView.maxWidth = Int.MAX_VALUE
 
-	    searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
+            searchView.setOnQueryTextFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) {
                     cancelSearch(searchView)
                 }
@@ -388,6 +389,10 @@ class ConfigurationFragment @JvmOverloads constructor(
 
             R.id.action_new_shadowtls -> {
                 startActivity(Intent(requireActivity(), ShadowTLSSettingsActivity::class.java))
+            }
+
+            R.id.action_new_anytls -> {
+                startActivity(Intent(requireActivity(), AnyTLSSettingsActivity::class.java))
             }
 
             R.id.action_new_config -> {
@@ -816,10 +821,6 @@ class ConfigurationFragment @JvmOverloads constructor(
         val testJobs = mutableListOf<Job>()
 
         val mainJob = runOnDefaultDispatcher {
-            if (DataStore.serviceState.started) {
-                stopService()
-                delay(500) // wait for service stop
-            }
             val group = DataStore.currentGroup()
             val profilesUnfiltered = SagerDatabase.proxyDao.getByGroup(group.id)
             test.proxyN = profilesUnfiltered.size
@@ -1660,8 +1661,8 @@ class ConfigurationFragment @JvmOverloads constructor(
                 try {
                     currentName = entity.displayName()!!
                     when (item.itemId) {
-                        R.id.action_standard_qr -> showCode(entity.toStdLink()!!)
-                        R.id.action_standard_clipboard -> export(entity.toStdLink()!!)
+                        R.id.action_standard_qr -> showCode(entity.toStdLink())
+                        R.id.action_standard_clipboard -> export(entity.toStdLink())
                         R.id.action_universal_qr -> showCode(entity.requireBean().toUniversalLink())
                         R.id.action_universal_clipboard -> export(
                             entity.requireBean().toUniversalLink()
@@ -1711,9 +1712,9 @@ class ConfigurationFragment @JvmOverloads constructor(
             }
         }
 
-	private fun cancelSearch(searchView: SearchView) {
-            searchView.onActionViewCollapsed()
-            searchView.clearFocus()
-        }
+    private fun cancelSearch(searchView: SearchView) {
+        searchView.onActionViewCollapsed()
+        searchView.clearFocus()
+    }
 
 }
