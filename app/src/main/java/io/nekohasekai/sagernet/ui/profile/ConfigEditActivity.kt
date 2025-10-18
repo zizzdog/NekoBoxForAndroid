@@ -33,6 +33,7 @@ class ConfigEditActivity : ThemedActivity() {
 
     var dirty = false
     var key = Key.SERVER_CONFIG
+    var useConfigStore = false
 
     class UnsavedChangesDialogFragment : AlertDialogFragment<Empty, Empty>() {
         override fun AlertDialog.Builder.prepare(listener: DialogInterface.OnClickListener) {
@@ -55,6 +56,7 @@ class ConfigEditActivity : ThemedActivity() {
 
         intent?.extras?.apply {
             getString("key")?.let { key = it }
+            getString("useConfigStore")?.let { useConfigStore = true }
         }
 
         binding = LayoutEditConfigBinding.inflate(layoutInflater)
@@ -70,7 +72,11 @@ class ConfigEditActivity : ThemedActivity() {
         binding.editor.apply {
             language = JsonLanguage()
             setHorizontallyScrolling(true)
-            setTextContent(DataStore.profileCacheStore.getString(key)!!)
+            if (useConfigStore) {
+                setTextContent(DataStore.configurationStore.getString(key) ?: "")
+            } else {
+                setTextContent(DataStore.profileCacheStore.getString(key) ?: "")
+            }
             addTextChangedListener {
                 if (!dirty) {
                     dirty = true
@@ -80,7 +86,10 @@ class ConfigEditActivity : ThemedActivity() {
         }
 
         binding.actionTab.setOnClickListener {
-            binding.editor.insert(binding.editor.tab())
+            try {
+                binding.editor.insert(binding.editor.tab())
+            } catch (e: Exception) {
+            }
         }
         binding.actionUndo.setOnClickListener {
             try {
@@ -101,7 +110,12 @@ class ConfigEditActivity : ThemedActivity() {
         }
 
         val extendedKeyboard = findViewById<ExtendedKeyboard>(R.id.extended_keyboard)
-        extendedKeyboard.setKeyListener { char -> binding.editor.insert(char) }
+        extendedKeyboard.setKeyListener { char ->
+            try {
+                binding.editor.insert(char)
+            } catch (e: Exception) {
+            }
+        }
         extendedKeyboard.setHasFixedSize(true)
         extendedKeyboard.submitList("{},:_\"".map { it.toString() })
         extendedKeyboard.setBackgroundColor(getColorAttr(R.attr.primaryOrTextPrimary))
@@ -142,7 +156,11 @@ class ConfigEditActivity : ThemedActivity() {
 
     fun saveAndExit() {
         formatText()?.let {
-            DataStore.profileCacheStore.putString(key, it)
+            if (useConfigStore) {
+                DataStore.configurationStore.putString(key, it)
+            } else {
+                DataStore.profileCacheStore.putString(key, it)
+            }
             finish()
         }
     }
