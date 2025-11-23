@@ -67,6 +67,7 @@ fun SingBoxOptions.DNSRule_DefaultOptions.checkEmpty(): Boolean {
     if (domain_regex?.isNotEmpty() == true) return false
     if (domain_keyword?.isNotEmpty() == true) return false
     if (user_id?.isNotEmpty() == true) return false
+    if (inbound?.isNotEmpty() == true) return false// 新增这一行：如果 inbound 不为空，则规则不为空
     return true
 }
 
