@@ -107,7 +107,7 @@ dns:fakedns
 ## 原本的`启用FakeDNS`功能
 使用如下配置且不选择任何应用
 ```
-!dns:fakedns
+!dns:fakednsALL
 ```
 
 ## 其他用法请自行探索

@@ -519,13 +519,14 @@ fun buildConfig(
                         "dns:remote"    -> dnsRule = 0L
                         "dns:block"     -> dnsRule = -2L
                         "dns:fakedns"   -> dnsRule = 9L
+                        "dns:fakednsALL"-> dnsRule = 99L
                         else -> { if (domainStr.startsWith("dns:")) 
                             Toast.makeText(SagerNet.application, rule.displayName() + "：自定义DNS规则填写错误!",Toast.LENGTH_LONG).show()
                         }
                     }
                     // 若启用自定义dns规则则删掉domain框输入内容的首行
                     if (dnsRule != null) 
-                         domainList = domainStr.substringAfter("\n","regexp:.*").listByLineOrComma() 
+                         domainList = domainStr.substringAfter("\n","").listByLineOrComma() 
                     else domainList = domainStr.listByLineOrComma() 
                 }
 
@@ -539,6 +540,12 @@ fun buildConfig(
                             disable_cache = true
                         }
                     9L  -> { //若使用fakedns
+                        if (useFakeDns) userDNSRuleList += makeDnsRuleObj().apply {
+                            server = "dns-fake"
+                            disable_cache = true
+                        }
+                    }
+                    99L  -> { //若使用fakednsALL
                         if (useFakeDns) userDNSRuleList += makeDnsRuleObj().apply {
                             server = "dns-fake"
                             inbound = listOf("tun-in")
